@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "307746251164",
+    "project_id": "shivzo-notification",
+    "storage_bucket": "shivzo-notification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307746251164:android:d129d1add27daf627ca859",
+        "android_client_info": {
+          "package_name": "com.shivzo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDU6cFCi6SN6SCKSmBbp4Q76aggcc1VZX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

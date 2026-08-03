@@ -1,0 +1,6 @@
+{
+  "name": "Shivzo",
+  "description": "Native Android WebView application for Shivzo.in featuring offline detection, pull-to-refresh, custom web client, and quick navigation actions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
