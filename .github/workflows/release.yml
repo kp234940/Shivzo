@@ -62,22 +62,22 @@ jobs:
           else
             echo "No valid custom keystore file found or secret was empty/invalid."
             echo "Generating new release.keystore in GitHub Actions..."
-            keytool -genkey -v -keystore app/release.keystore -storepass "${{ secrets.STORE_PASSWORD || 'android' }}" -alias "${{ secrets.KEY_ALIAS || 'upload' }}" -keypass "${{ secrets.KEY_PASSWORD || 'android' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
+            keytool -genkey -v -keystore app/release.keystore -storepass "${{ secrets.STORE_PASSWORD || 'Shivzo@#.2003' }}" -alias "${{ secrets.KEY_ALIAS || 'my-key-alias' }}" -keypass "${{ secrets.KEY_PASSWORD || 'Shivzo@#.2003' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
           fi
 
           # Sanity check: Ensure generated or copied keystore is not 0 bytes
           if [ ! -s "app/release.keystore" ]; then
             echo "Keystore is empty or corrupt. Generating fresh fallback..."
             rm -f app/release.keystore
-            keytool -genkey -v -keystore app/release.keystore -storepass "android" -alias "upload" -keypass "android" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
+            keytool -genkey -v -keystore app/release.keystore -storepass "Shivzo@#.2003" -alias "my-key-alias" -keypass "Shivzo@#.2003" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
           fi
 
       - name: Build Release APK and AAB
         env:
           KEYSTORE_PATH: app/release.keystore
-          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'android' }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'upload' }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'android' }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'Shivzo@#.2003' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || 'my-key-alias' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'Shivzo@#.2003' }}
         run: |
           if [ -f "./gradlew" ]; then
             ./gradlew :app:assembleRelease :app:bundleRelease -x lint --stacktrace
