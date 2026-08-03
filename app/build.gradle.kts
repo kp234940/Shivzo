@@ -37,9 +37,9 @@ android {
 
       if (releaseKeystore != null) {
         storeFile = releaseKeystore
-        storePassword = System.getenv("STORE_PASSWORD").takeUnless { it.isNullOrEmpty() } ?: "android"
-        keyAlias = System.getenv("KEY_ALIAS").takeUnless { it.isNullOrEmpty() } ?: "upload"
-        keyPassword = System.getenv("KEY_PASSWORD").takeUnless { it.isNullOrEmpty() } ?: "android"
+        storePassword = System.getenv("STORE_PASSWORD").takeUnless { it.isNullOrEmpty() } ?: "Shivzo@#.2003"
+        keyAlias = System.getenv("KEY_ALIAS").takeUnless { it.isNullOrEmpty() } ?: "my-key-alias"
+        keyPassword = System.getenv("KEY_PASSWORD").takeUnless { it.isNullOrEmpty() } ?: "Shivzo@#.2003"
       } else {
         storeFile = file("${rootDir}/debug.keystore")
         storePassword = "android"
