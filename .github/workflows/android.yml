@@ -54,33 +54,59 @@ jobs:
         run: |
           rm -f app/release.keystore app/decoded.keystore
 
+          STORE_PASS="${{ secrets.STORE_PASSWORD || 'Shivzo@#.2003' }}"
+          KEY_ALIAS_NAME="${{ secrets.KEY_ALIAS || 'my-key-alias' }}"
+          KEY_PASS="${{ secrets.KEY_PASSWORD || 'Shivzo@#.2003' }}"
+
+          # Helper function to check if keystore exists and keytool can read alias with storepass
+          is_valid_keystore() {
+            local ks_file="$1"
+            if [ -s "$ks_file" ]; then
+              keytool -list -keystore "$ks_file" -storepass "$STORE_PASS" -alias "$KEY_ALIAS_NAME" >/dev/null 2>&1
+              return $?
+            fi
+            return 1
+          }
+
           # 1. Try decoding KEYSTORE_BASE64 secret if provided
           if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "Attempting to decode KEYSTORE_BASE64 from GitHub Secrets..."
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/decoded.keystore 2>/dev/null || true
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n ' | base64 --decode > app/decoded.keystore 2>/dev/null || \
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\r\n ' | base64 -d > app/decoded.keystore 2>/dev/null || true
           fi
 
-          # 2. Select valid non-empty keystore
-          if [ -s "app/decoded.keystore" ]; then
-            echo "Using decoded KEYSTORE_BASE64 secret."
+          # 2. Select valid keystore or generate a fresh clean one
+          if is_valid_keystore "app/decoded.keystore"; then
+            echo "✅ Using valid decoded KEYSTORE_BASE64 secret."
             cp app/decoded.keystore app/release.keystore
-          elif [ -s "app/my-release-key.jks" ]; then
-            echo "Using app/my-release-key.jks from repository."
+          elif is_valid_keystore "app/my-release-key.jks"; then
+            echo "✅ Using valid app/my-release-key.jks from repository."
             cp app/my-release-key.jks app/release.keystore
-          elif [ -s "my-release-key.jks" ]; then
-            echo "Using my-release-key.jks from repository root."
+          elif is_valid_keystore "my-release-key.jks"; then
+            echo "✅ Using valid my-release-key.jks from repository root."
             cp my-release-key.jks app/release.keystore
           else
-            echo "No valid custom keystore file found or secret was empty/invalid."
-            echo "Generating new release.keystore in GitHub Actions..."
-            keytool -genkey -v -keystore app/release.keystore -storepass "${{ secrets.STORE_PASSWORD || 'Shivzo@#.2003' }}" -alias "${{ secrets.KEY_ALIAS || 'my-key-alias' }}" -keypass "${{ secrets.KEY_PASSWORD || 'Shivzo@#.2003' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
+            echo "⚠️ No valid custom keystore file found or secret base64 was corrupt/password mismatched."
+            echo "Generating fresh valid release.keystore in GitHub Actions..."
+            rm -f app/release.keystore
+            keytool -genkeypair -v -keystore app/release.keystore \
+              -storepass "$STORE_PASS" \
+              -alias "$KEY_ALIAS_NAME" \
+              -keypass "$KEY_PASS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Shivzo Release,O=Shivzo,C=IN" -storetype PKCS12
           fi
 
-          # Sanity check: Ensure generated or copied keystore is not 0 bytes
-          if [ ! -s "app/release.keystore" ]; then
-            echo "Keystore is empty or corrupt. Generating fresh fallback..."
+          # Sanity check: verify release.keystore is 100% valid and readable
+          if ! is_valid_keystore "app/release.keystore"; then
+            echo "⚠️ Keystore validation failed. Creating automatic clean fallback..."
             rm -f app/release.keystore
-            keytool -genkey -v -keystore app/release.keystore -storepass "Shivzo@#.2003" -alias "my-key-alias" -keypass "Shivzo@#.2003" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
+            keytool -genkeypair -v -keystore app/release.keystore \
+              -storepass "$STORE_PASS" \
+              -alias "$KEY_ALIAS_NAME" \
+              -keypass "$STORE_PASS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Shivzo Release,O=Shivzo,C=IN" -storetype PKCS12
           fi
 
       - name: Build Debug & Release APK & AAB
