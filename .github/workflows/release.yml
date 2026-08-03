@@ -41,12 +41,35 @@ jobs:
 
       - name: Prepare Release Keystore
         run: |
-          if [ "${{ secrets.KEYSTORE_BASE64 }}" != "" ]; then
-            echo "Decoding KEYSTORE_BASE64 from GitHub Secrets..."
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          rm -f app/release.keystore app/decoded.keystore
+
+          # 1. Try decoding KEYSTORE_BASE64 secret if provided
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Attempting to decode KEYSTORE_BASE64 from GitHub Secrets..."
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/decoded.keystore 2>/dev/null || true
+          fi
+
+          # 2. Select valid non-empty keystore
+          if [ -s "app/decoded.keystore" ]; then
+            echo "Using decoded KEYSTORE_BASE64 secret."
+            cp app/decoded.keystore app/release.keystore
+          elif [ -s "app/my-release-key.jks" ]; then
+            echo "Using app/my-release-key.jks from repository."
+            cp app/my-release-key.jks app/release.keystore
+          elif [ -s "my-release-key.jks" ]; then
+            echo "Using my-release-key.jks from repository root."
+            cp my-release-key.jks app/release.keystore
           else
+            echo "No valid custom keystore file found or secret was empty/invalid."
             echo "Generating new release.keystore in GitHub Actions..."
-            keytool -genkey -v -keystore app/release.keystore -storepass android -alias upload -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
+            keytool -genkey -v -keystore app/release.keystore -storepass "${{ secrets.STORE_PASSWORD || 'android' }}" -alias "${{ secrets.KEY_ALIAS || 'upload' }}" -keypass "${{ secrets.KEY_PASSWORD || 'android' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
+          fi
+
+          # Sanity check: Ensure generated or copied keystore is not 0 bytes
+          if [ ! -s "app/release.keystore" ]; then
+            echo "Keystore is empty or corrupt. Generating fresh fallback..."
+            rm -f app/release.keystore
+            keytool -genkey -v -keystore app/release.keystore -storepass "android" -alias "upload" -keypass "android" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Shivzo Release,O=Shivzo,C=US"
           fi
 
       - name: Build Release APK and AAB
