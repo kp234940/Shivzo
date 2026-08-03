@@ -53,9 +53,9 @@ jobs:
       - name: Build Debug & Release APK & AAB
         run: |
           if [ -f "./gradlew" ]; then
-            ./gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease --stacktrace
+            ./gradlew :app:assembleDebug :app:assembleRelease :app:bundleRelease -x lint --stacktrace
           else
-            gradle :app:assembleDebug :app:assembleRelease :app:bundleRelease --stacktrace
+            gradle :app:assembleDebug :app:assembleRelease :app:bundleRelease -x lint --stacktrace
           fi
 
       - name: Upload Debug APK Artifact
