@@ -26,21 +26,20 @@ android {
   signingConfigs {
     create("release") {
       val envPath = System.getenv("KEYSTORE_PATH")
-      val releaseKeystore = if (!envPath.isNullOrEmpty() && file(envPath).exists()) {
-        file(envPath)
-      } else if (file("${rootDir}/app/release.keystore").exists()) {
-        file("${rootDir}/app/release.keystore")
-      } else if (file("${rootDir}/app/my-release-key.jks").exists()) {
-        file("${rootDir}/app/my-release-key.jks")
-      } else if (file("${rootDir}/my-release-key.jks").exists()) {
+      val candidates = listOfNotNull(
+        envPath?.let { file(it) },
+        file("${rootDir}/app/release.keystore"),
+        file("${rootDir}/app/my-release-key.jks"),
         file("${rootDir}/my-release-key.jks")
-      } else null
+      )
+
+      val releaseKeystore = candidates.firstOrNull { it.exists() && it.length() > 0L }
 
       if (releaseKeystore != null) {
         storeFile = releaseKeystore
-        storePassword = System.getenv("STORE_PASSWORD") ?: "android"
-        keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
-        keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+        storePassword = System.getenv("STORE_PASSWORD").takeUnless { it.isNullOrEmpty() } ?: "android"
+        keyAlias = System.getenv("KEY_ALIAS").takeUnless { it.isNullOrEmpty() } ?: "upload"
+        keyPassword = System.getenv("KEY_PASSWORD").takeUnless { it.isNullOrEmpty() } ?: "android"
       } else {
         storeFile = file("${rootDir}/debug.keystore")
         storePassword = "android"
